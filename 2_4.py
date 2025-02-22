@@ -3,7 +3,7 @@ from all_colors import *
 import pygame as pg
 from pygame.constants import *
 
-from all_colors import BLACK
+from all_colors import *
 
 pg.init()
 
@@ -11,25 +11,11 @@ size = (1280, 720)
 screen = pg.display.set_mode(size)
 BACKGROUND = (255, 255, 255)
 screen.fill(BACKGROUND)
-x = 0
-y = 0
-rect_size = 200
-colors = [RED, BLACK]
 
-# rect1 = pg.Rect(x, y, rect_size, rect_size)
-# rect1.center = (screen.get_width()//2, screen.get_height()//2)
-# pg.draw.rect(screen, BLACK, rect1)
-#
-# rect2 = pg.Rect(x, y, rect_size//2, rect_size//2)
-# rect2.center = (screen.get_width()//2, screen.get_height()//2)
-# pg.draw.rect(screen, RED, rect2)
+COLORS = [BLACK, WHITE, RED, GREEN, YELLOW, CYAN, MAGENTA, GRAY,
+          ORANGE, PINK, BROWN, PURPLE, LIME, NAVY, OLIVE, MAROON, TEAL, GOLD]
 
-for i in range(18):
-    rect1 = pg.Rect(x, y, rect_size, rect_size)
-    rect1.center = (screen.get_width()//2, screen.get_height()//2)
-    pg.draw.rect(screen, BLACK, rect1)
-
-
+initial_size = 200
 FPS = 60
 clock = pg.time.Clock()
 
@@ -38,6 +24,12 @@ while running:
     for event in pg.event.get():
         if event.type == pg.QUIT:
             running = False
+
+    size = initial_size
+    for i in range(18):
+        rect = pg.Rect(0,0, size, size)
+
+
 
 
 
