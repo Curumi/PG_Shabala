@@ -5,6 +5,11 @@ from all_colors import *
 from pygame.constants import *
 pg.init()
 
+# bounce_snd = pg.mixer.sound('resours/bounce.mp3')
+# fail_snd = pg.mixer.sound('resours/fail.mp3')
+
+
+
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 720
 
@@ -47,6 +52,11 @@ ai_mode = True
 if len(sys.argv)>1:
     if sys.argv[1] == '--human':
         ai_mode = False
+
+def score():
+    pass
+#if
+
 
 
 def update_ai():
@@ -100,7 +110,7 @@ while running:
         BALL_SPEED_y *= -1
 
 
-# Если поверхность мяча столкнулась с поверхностью 1 ракетки или поверхность мяча столкнулась с поверхностью второй ракетки  - скорость мяча по оси икс умножить на -1
+# Если поверхность мяча столкнулась с поверхностью 1 ракетки или поверхность мяча столкнулась с поверхностью второй ракетки - скорость мяча по оси икс умножить на -1
 
     if ball_rect.colliderect(paddle1_rect) or ball_rect.colliderect(paddle2_rect):
         BALL_SPEED_X *= -1
@@ -131,4 +141,4 @@ while running:
 
 pg.quit()
 
-#ЫЫЫЫЫЫЫЫЫЫЫ звуки ЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫЫ увеличение скорости после удара (максимум 30) еще кароче табло скорость и кароче игру завершать
+#звуки увеличение скорости после удара (максимум 30) еще табло скорость и игру завершать
