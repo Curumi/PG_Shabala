@@ -5,9 +5,6 @@ from all_colors import *
 from pygame.constants import *
 pg.init()
 
-# bounce_snd = pg.mixer.sound('resours/bounce.mp3')
-# fail_snd = pg.mixer.sound('resours/fail.mp3')
-
 
 
 SCREEN_WIDTH = 1200

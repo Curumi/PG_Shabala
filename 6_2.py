@@ -37,7 +37,7 @@ while running:
             running = False
 
         elif event.type == pg.MOUSEMOTION:
-            if button_rect.collideption(event.pos):
+            if button_rect.collidepoint(event.pos):
                 hovering = True
             else:
                 hovering = False
