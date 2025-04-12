@@ -16,17 +16,16 @@ pacman_images = {
     'down_right': pygame.image.load('resours/pacman_down_right.png'),
 }
 
-
 class Dot:
     def __init__(self, pos):
         self.pos = pos
         self.collected = False
         self.radius = 5
+        self.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
     def draw(self, screen):
         if not self.collected:
-            pygame.draw.circle(screen, (255, 255, 0), self.pos, self.radius)
-
+            pygame.draw.circle(screen, self.color, self.pos, self.radius)
 
 def create_dots(count, size):
     dots = []
@@ -35,7 +34,6 @@ def create_dots(count, size):
         y = random.randint(50, size[1] - 50)
         dots.append(Dot((x, y)))
     return dots
-
 
 def get_direction(pos1, pos2):
     dx = pos2[0] - pos1[0]
@@ -65,10 +63,8 @@ def get_direction(pos1, pos2):
 
     return direction
 
-
 def distance(pos1, pos2):
     return math.sqrt((pos2[0] - pos1[0]) ** 2 + (pos2[1] - pos1[1]) ** 2)
-
 
 def move_towards(pos1, pos2, min_speed=1, max_speed=3):
     x1, y1 = pos1
@@ -94,6 +90,12 @@ def move_towards(pos1, pos2, min_speed=1, max_speed=3):
 
     return (x1, y1)
 
+def show_roulette(screen, size):
+    font = pygame.font.SysFont(None, 72)
+    text = font.render("Roulette Time!", True, (255, 255, 255))
+    screen.blit(text, (size[0] // 2 - text.get_width() // 2, size[1] // 2 - text.get_height() // 2))
+    pygame.display.flip()
+    pygame.time.wait(3000)
 
 size = (800, 600)
 screen = pygame.display.set_mode(size)
@@ -102,17 +104,12 @@ BACKGROUND = (0, 0, 0)
 FPS = 60
 clock = pygame.time.Clock()
 
-
 player_pos = [400, 300]
-ai_pos = [200, 200]
 
 # Счет
 player_score = 0
-ai_score = 0
-
 
 dots = create_dots(50, size)
-
 
 game_time = 180
 start_time = time.time()
@@ -124,17 +121,9 @@ while running:
     elapsed = current_time - start_time
     remaining_time = max(0, game_time - elapsed)
 
-
     if remaining_time <= 0:
         running = False
-        if player_score > ai_score:
-            result = "Игрок победил!"
-        elif ai_score > player_score:
-            result = "ИИ победил!"
-        else:
-            result = "Ничья!"
-
-
+        result = "Время вышло!"
         screen.fill(BACKGROUND)
         font = pygame.font.SysFont(None, 72)
         text = font.render(result, True, (255, 255, 255))
@@ -147,33 +136,14 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-
     mouse_pos = pygame.mouse.get_pos()
     player_direction = get_direction(player_pos, mouse_pos)
     player_pos = list(move_towards(player_pos, mouse_pos))
 
-
     if all(dot.collected for dot in dots):
         dots = create_dots(50, size)
 
-    if dots:
-
-        closest_dot = None
-        min_dist = float('inf')
-        for dot in dots:
-            if not dot.collected:
-                dist = distance(ai_pos, dot.pos)
-                if dist < min_dist:
-                    min_dist = dist
-                    closest_dot = dot
-
-        if closest_dot:
-            ai_direction = get_direction(ai_pos, closest_dot.pos)
-            ai_pos = list(move_towards(ai_pos, closest_dot.pos))
-
-
     player_rect = pygame.Rect(player_pos[0] - 15, player_pos[1] - 15, 30, 30)
-    ai_rect = pygame.Rect(ai_pos[0] - 15, ai_pos[1] - 15, 30, 30)
 
     for dot in dots:
         if not dot.collected:
@@ -184,9 +154,8 @@ while running:
                 dot.collected = True
                 player_score += 1
 
-            if ai_rect.colliderect(dot_rect):
-                dot.collected = True
-                ai_score += 1
+                if player_score == 10:
+                    show_roulette(screen, size)
 
     screen.fill(BACKGROUND)
 
@@ -194,10 +163,9 @@ while running:
         dot.draw(screen)
 
     screen.blit(pacman_images[player_direction], (player_pos[0] - 15, player_pos[1] - 15))
-    screen.blit(pacman_images[ai_direction], (ai_pos[0] - 15, ai_pos[1] - 15))
 
     font = pygame.font.SysFont(None, 36)
-    score_text = font.render(f"Игрок: {player_score}   ИИ: {ai_score}", True, (255, 255, 255))
+    score_text = font.render(f"Игрок: {player_score}", True, (255, 255, 255))
     time_text = font.render(f"Время: {int(remaining_time // 60)}:{int(remaining_time % 60):02d}", True, (255, 255, 255))
 
     screen.blit(score_text, (20, 20))
