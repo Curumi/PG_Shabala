@@ -5,6 +5,7 @@ import time
 
 pygame.init()
 
+# Загрузка изображений
 pacman_images = {
     'up': pygame.image.load('resours/pacman_up.png'),
     'down': pygame.image.load('resours/pacman_down.png'),
@@ -90,12 +91,120 @@ def move_towards(pos1, pos2, min_speed=1, max_speed=3):
 
     return (x1, y1)
 
-def show_roulette(screen, size):
-    font = pygame.font.SysFont(None, 72)
-    text = font.render("Roulette Time!", True, (255, 255, 255))
-    screen.blit(text, (size[0] // 2 - text.get_width() // 2, size[1] // 2 - text.get_height() // 2))
+def show_roulette(screen, size, player_score):
+    # Цвета для рулетки
+    roulette_colors = [
+        (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0),
+        (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0),
+        (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0),
+        (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0),
+        (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0),
+        (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0), (255, 0, 0), (0, 0, 0)
+    ]
+    
+    # Числа на рулетке
+    roulette_numbers = [
+        0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
+        5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
+    ]
+    
+    # Параметры рулетки
+    wheel_radius = min(size) // 3
+    wheel_center = (size[0] // 2, size[1] // 2)
+    segments = len(roulette_numbers)
+    segment_angle = 360 / segments
+    
+    # Анимация вращения
+    spinning = True
+    spin_speed = 25
+    spin_duration = 100  # Количество кадров анимации
+    spin_frame = 0
+    winning_number = None
+    
+    # Текст
+    font_large = pygame.font.SysFont(None, 72)
+    font_small = pygame.font.SysFont(None, 36)
+    
+    clock = pygame.time.Clock()
+    
+    while spinning:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return player_score
+        
+        # Очистка экрана
+        screen.fill((0, 100, 0))  # Зеленый фон как в казино
+        
+        # Отрисовка рулетки
+        current_angle = spin_frame * spin_speed % 360
+        
+        for i in range(segments):
+            angle = i * segment_angle + current_angle
+            start_angle = math.radians(angle)
+            end_angle = math.radians(angle + segment_angle)
+            
+            # Отрисовка сегмента
+            pygame.draw.arc(screen, roulette_colors[i % len(roulette_colors)], 
+                            (wheel_center[0] - wheel_radius, wheel_center[1] - wheel_radius, 
+                             wheel_radius * 2, wheel_radius * 2),
+                            start_angle, end_angle, wheel_radius)
+            
+            # Отрисовка числа
+            text = font_small.render(str(roulette_numbers[i]), True, (255, 255, 255))
+            text_angle = angle + segment_angle / 2
+            text_pos = (
+                wheel_center[0] + math.cos(math.radians(text_angle)) * wheel_radius * 0.7 - text.get_width() / 2,
+                wheel_center[1] + math.sin(math.radians(text_angle)) * wheel_radius * 0.7 - text.get_height() / 2
+            )
+            screen.blit(text, text_pos)
+        
+        # Отрисовка указателя
+        pygame.draw.polygon(screen, (255, 215, 0), [
+            (wheel_center[0], wheel_center[1] - wheel_radius - 20),
+            (wheel_center[0] - 10, wheel_center[1] - wheel_radius),
+            (wheel_center[0] + 10, wheel_center[1] - wheel_radius)
+        ])
+        
+        # Отображение текста
+        title_text = font_large.render("Roulette Time!", True, (255, 255, 255))
+        screen.blit(title_text, (size[0] // 2 - title_text.get_width() // 2, 50))
+        
+        # Завершение анимации
+        spin_frame += 1
+        if spin_frame >= spin_duration:
+            spinning = False
+            winning_index = int(current_angle / segment_angle) % segments
+            winning_number = roulette_numbers[winning_index]
+            
+            # Определение выигрыша
+            if winning_number == 0:
+                win_multiplier = 35
+            elif winning_number % 2 == 0:
+                win_multiplier = 2  # Четные числа
+            else:
+                win_multiplier = 2  # Нечетные числа
+            
+            # Красные числа дают дополнительный бонус
+            if roulette_colors[winning_index % len(roulette_colors)] == (255, 0, 0):
+                win_multiplier += 1
+            
+            player_score += win_multiplier * 5
+        
+        pygame.display.flip()
+        clock.tick(30)
+    
+    # Показ результата
+    result_text = font_large.render(f"Выпало: {winning_number}", True, (255, 255, 255))
+    win_text = font_large.render(f"+{win_multiplier * 5} очков!", True, (255, 255, 0))
+    
+    screen.fill((0, 100, 0))
+    screen.blit(result_text, (size[0] // 2 - result_text.get_width() // 2, size[1] // 2 - 50))
+    screen.blit(win_text, (size[0] // 2 - win_text.get_width() // 2, size[1] // 2 + 50))
     pygame.display.flip()
     pygame.time.wait(3000)
+    
+    return player_score
 
 size = (800, 600)
 screen = pygame.display.set_mode(size)
@@ -105,16 +214,11 @@ FPS = 60
 clock = pygame.time.Clock()
 
 player_pos = [400, 300]
-
-# Счет
 player_score = 0
-
 dots = create_dots(50, size)
-
 game_time = 180
 start_time = time.time()
 
-# Основной игровой цикл
 running = True
 while running:
     current_time = time.time()
@@ -148,14 +252,14 @@ while running:
     for dot in dots:
         if not dot.collected:
             dot_rect = pygame.Rect(dot.pos[0] - dot.radius, dot.pos[1] - dot.radius,
-                                   dot.radius * 2, dot.radius * 2)
+                                 dot.radius * 2, dot.radius * 2)
 
             if player_rect.colliderect(dot_rect):
                 dot.collected = True
                 player_score += 1
 
                 if player_score == 10:
-                    show_roulette(screen, size)
+                    player_score = show_roulette(screen, size, player_score)
 
     screen.fill(BACKGROUND)
 
