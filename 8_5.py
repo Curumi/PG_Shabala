@@ -1,68 +1,83 @@
-import pygame as pg
-pg.init()
-
-size = (1280, 720)
-screen = pg.display.set_mode(size)
-BACKGROUND = (0,0,0)
-screen.fill(BACKGROUND)
-
-points = []
-show_preview = True
-
-LINE_COLOR = (255,255,255)
-PREVIEW_COLOR = (192,192,192)
-HIGHLIGHT_COLOR = (255,0,0)
-FPS = 60
-RADIUS = 5
-clock = pg.time.Clock()
-
-def remove_point(mouse_pos):
-    for point in points:
-        if ((point[0] - mouse_pos[0])**2 + (point[1] - mouse_pos[1]) **2 <= RADIUS **2):
-            points.remove(point)
-            break
-
-def highlight_closet_point(mouse_pos):
+def get_closest_point(mouse_pos):
     closest_point = None
     closest_distance = float('inf')
     for point in points:
-        distance =  ((point[0] - mouse_pos[0])**2 + (point[1] - mouse_pos[1])**2) ** 0.5
+        distance = ((point[0] - mouse_pos[0])**2 +
+                    (point[1] - mouse_pos[1])**2)**0.5
+
         if distance <= RADIUS**2 and distance < closest_distance:
             closest_point = point
             closest_distance = distance
-    return closest_point
+    return  closest_point
 
 
 
+
+
+def remove_point(mouse_pos):
+    for point in points:
+        if ((point[0] - mouse_pos[0])**2 + (point[1] - mouse_pos[1])**2
+        <= RADIUS**2):
+            points.remove(point)
+            break
+
+
+
+import pygame
+pygame.init()
+
+
+
+
+size = (1280, 720)
+screen = pygame.display.set_mode(size)
+pygame.display.set_caption("новая игра")
+BACKGROUND = (0,0,0)
+screen.fill(BACKGROUND)
+COLORS = (192,192,192)
+LINE_COLOR = (255,255,255)
+
+points = []
+RADIUS = 5
+RED = (255,0,0)
+
+
+FPS = 60
+clock = pygame.time.Clock()
 running = True
 while running:
-    mouse_pos = pg.mouse.get_pos()
+    mouse_pos = pygame.mouse.get_pos()
     closest_point = get_closest_point(mouse_pos)
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
             running = False
 
-        elif event.type == pg.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                points.append(event.pos)
 
-            if event.button == 3:
-                show_preview = not show_preview
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if closest_point:
+
+                if event.button == 1:
+                    points.append(closest_point)
+
+                elif event.button == 3:
+                    remove_point(closest_point)
+
+            elif event.button == 1:
+                points.append(mouse_pos)
 
 
     screen.fill(BACKGROUND)
 
     for i in range(len(points)-1):
-        start_point = points[i]
-        end_point = points[i+1]
-        pg.draw.line(screen, (255,255,255), start_point, end_point)
+        pygame.draw.line(screen,LINE_COLOR,points[i],points[i+1],3)
 
-    if len(points)>1 and show_preview:
-        last_point = points[-1]
-        mouse_pos = pg.mouse.get_pos()
-        pg.draw.aaline(screen, (192,192,192), last_point, mouse_pos)
-    highlight_closet_point(pg.mouse.get_pos())
-    pg.display.flip()
+    if len(points)>1:
+        pygame.draw.aaline(screen, COLORS,points[-1],mouse_pos, 3)
+
+    if closest_point:
+        pygame.draw.circle(screen,RED,closest_point,RADIUS,1)
+
+    pygame.display.flip()
     clock.tick(FPS)
 
-pg.quit()
+pygame.quit()
