@@ -1,3 +1,6 @@
+import pygame
+pygame.init()
+
 def get_closest_point(mouse_pos):
     closest_point = None
     closest_distance = float('inf')
@@ -23,8 +26,7 @@ def remove_point(mouse_pos):
 
 
 
-import pygame
-pygame.init()
+
 
 
 

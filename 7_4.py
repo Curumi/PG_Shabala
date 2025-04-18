@@ -1,177 +1,142 @@
 import math
-import pygame
 import random
-import time
+import pygame as pg
 
-pygame.init()
+pg.init()
 
+# Загрузка изображений
 pacman_images = {
-    'up': pygame.image.load('resours/pacman_up.png'),
-    'down': pygame.image.load('resours/pacman_down.png'),
-    'left': pygame.image.load('resours/pacman_left.png'),
-    'right': pygame.image.load('resours/pacman_right.png'),
-    'up_left': pygame.image.load('resours/pacman_up_left.png'),
-    'up_right': pygame.image.load('resours/pacman_up_right.png'),
-    'down_left': pygame.image.load('resours/pacman_down_left.png'),
-    'down_right': pygame.image.load('resours/pacman_down_right.png'),
+    'up': pg.image.load('resours/pacman_up.png'),
+    'down': pg.image.load('resours/pacman_down.png'),
+    'left': pg.image.load('resours/pacman_left.png'),
+    'right': pg.image.load('resours/pacman_right.png'),
+    'up_left': pg.image.load('resours/pacman_up_left.png'),
+    'up_right': pg.image.load('resours/pacman_up_right.png'),
+    'down_left': pg.image.load('resours/pacman_down_left.png'),
+    'down_right': pg.image.load('resours/pacman_down_right.png')
 }
 
-class Dot:
-    def __init__(self, pos):
-        self.pos = pos
-        self.collected = False
-        self.radius = 5
-        self.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+# Константы
+SIZE = (640, 480)
+BACKGROUND = (0, 0, 0)
+CIRCLE_COLOR = (255, 255, 255)
+CIRCLE_RADIUS = 10
+FPS = 60
+PACMAN_SPEED = 3
+GHOST_SPEED = 2
+PELLET_COLOR = (255, 255, 0)
+PELLET_RADIUS = 3
 
-    def draw(self, screen):
-        if not self.collected:
-            pygame.draw.circle(screen, self.color, self.pos, self.radius)
-
-def create_dots(count, size):
-    dots = []
-    for _ in range(count):
-        x = random.randint(50, size[0] - 50)
-        y = random.randint(50, size[1] - 50)
-        dots.append(Dot((x, y)))
-    return dots
 
 def get_direction(pos1, pos2):
     dx = pos2[0] - pos1[0]
     dy = pos2[1] - pos1[1]
 
-    direction = 'right'
-
-    if dy < 0:
-        if dx < 0:
-            direction = 'up_left'
-        elif dx > 0:
-            direction = 'up_right'
-        else:
-            direction = 'up'
-    elif dy > 0:
-        if dx < 0:
-            direction = 'down_left'
-        elif dx > 0:
-            direction = 'down_right'
-        else:
-            direction = 'down'
+    if abs(dx) > abs(dy):
+        return 'right' if dx > 0 else 'left'
     else:
-        if dx < 0:
-            direction = 'left'
-        elif dx > 0:
-            direction = 'right'
+        return 'down' if dy > 0 else 'up'
 
-    return direction
 
 def distance(pos1, pos2):
     return math.sqrt((pos2[0] - pos1[0]) ** 2 + (pos2[1] - pos1[1]) ** 2)
 
-def move_towards(pos1, pos2, min_speed=1, max_speed=3):
-    x1, y1 = pos1
-    x2, y2 = pos2
-    dx = x2 - x1
-    dy = y2 - y1
 
+def move_towards(pos1, pos2, speed):
+    dx = pos2[0] - pos1[0]
+    dy = pos2[1] - pos1[1]
     dist = distance(pos1, pos2)
-
-    if dist < min_speed:
-        return pos2
 
     if dist == 0:
         return pos1
 
-    speed = max(min_speed, min(dist / 5, max_speed))
+    dx = dx / dist * speed
+    dy = dy / dist * speed
 
-    dx /= dist
-    dy /= dist
+    return (pos1[0] + dx, pos1[1] + dy)
 
-    x1 += dx * speed
-    y1 += dy * speed
 
-    return (x1, y1)
+class Ghost:
+    def __init__(self, x, y):
+        self.pos = [x, y]
+        self.color = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
 
-def show_eat(screen, size):
-    font = pygame.font.SysFont(None, 72)
-    text = font.render("Eat them all!", True, (255, 255, 255))
-    screen.blit(text, (size[0] // 2 - text.get_width() // 2, size[1] // 2 - text.get_height() // 2))
-    pygame.display.flip()
-    pygame.time.wait(3000)
+    def move(self, target_pos):
+        self.pos = move_towards(self.pos, target_pos, GHOST_SPEED)
 
-size = (800, 600)
-screen = pygame.display.set_mode(size)
-pygame.display.set_caption("Pac-Man Турнир")
-BACKGROUND = (0, 0, 0)
-FPS = 60
-clock = pygame.time.Clock()
+    def draw(self, screen):
+        pg.draw.circle(screen, self.color, (int(self.pos[0]), int(self.pos[1])), CIRCLE_RADIUS)
 
-player_pos = [400, 300]
 
-# Счет
-player_score = 0
+class Pellet:
+    def __init__(self, x, y):
+        self.pos = (x, y)
 
-dots = create_dots(50, size)
+    def draw(self, screen):
+        pg.draw.circle(screen, PELLET_COLOR, self.pos, PELLET_RADIUS)
 
-game_time = 180
-start_time = time.time()
 
-# Основной игровой цикл
+# Инициализация игры
+screen = pg.display.set_mode(SIZE)
+pg.display.set_caption("Pac-Man")
+clock = pg.time.Clock()
+
+pacman_pos = [SIZE[0] // 2, SIZE[1] // 2]
+ghosts = [Ghost(random.randint(0, SIZE[0]), random.randint(0, SIZE[1])) for _ in range(4)]
+pellets = [Pellet(random.randint(0, SIZE[0]), random.randint(0, SIZE[1])) for _ in range(50)]
+
+score = 0
+font = pg.font.Font(None, 36)
+
+# Центрирование мыши
+pg.mouse.set_pos(SIZE[0] // 2, SIZE[1] // 2)
+pg.event.set_grab(True)
+
 running = True
 while running:
-    current_time = time.time()
-    elapsed = current_time - start_time
-    remaining_time = max(0, game_time - elapsed)
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
+            running = False
+        elif event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:
+                running = False
 
-    if remaining_time <= 0:
-        running = False
-        result = "Время вышло!"
-        screen.fill(BACKGROUND)
-        font = pygame.font.SysFont(None, 72)
-        text = font.render(result, True, (255, 255, 255))
-        screen.blit(text, (size[0] // 2 - text.get_width() // 2, size[1] // 2 - text.get_height() // 2))
-        pygame.display.flip()
-        pygame.time.wait(3000)
-        break
+    # Обновление позиции Pac-Man
+    mouse_pos = pg.mouse.get_pos()
+    direction = get_direction(pacman_pos, mouse_pos)
+    pacman_pos = move_towards(pacman_pos, mouse_pos, PACMAN_SPEED)
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    # Обновление призраков
+    for ghost in ghosts:
+        ghost.move(pacman_pos)
+
+    # Проверка столкновений с пеллетами
+    for pellet in pellets[:]:
+        if distance(pacman_pos, pellet.pos) < CIRCLE_RADIUS + PELLET_RADIUS:
+            pellets.remove(pellet)
+            score += 10
+
+    # Проверка столкновений с призраками
+    for ghost in ghosts:
+        if distance(pacman_pos, ghost.pos) < CIRCLE_RADIUS * 2:
             running = False
 
-    mouse_pos = pygame.mouse.get_pos()
-    player_direction = get_direction(player_pos, mouse_pos)
-    player_pos = list(move_towards(player_pos, mouse_pos))
-
-    if all(dot.collected for dot in dots):
-        dots = create_dots(50, size)
-
-    player_rect = pygame.Rect(player_pos[0] - 15, player_pos[1] - 15, 30, 30)
-
-    for dot in dots:
-        if not dot.collected:
-            dot_rect = pygame.Rect(dot.pos[0] - dot.radius, dot.pos[1] - dot.radius,
-                                   dot.radius * 2, dot.radius * 2)
-
-            if player_rect.colliderect(dot_rect):
-                dot.collected = True
-                player_score += 1
-
-                if player_score == 10:
-                    show_eat(screen, size)
-
+    # Отрисовка
     screen.fill(BACKGROUND)
 
-    for dot in dots:
-        dot.draw(screen)
+    for pellet in pellets:
+        pellet.draw(screen)
 
-    screen.blit(pacman_images[player_direction], (player_pos[0] - 15, player_pos[1] - 15))
+    for ghost in ghosts:
+        ghost.draw(screen)
 
-    font = pygame.font.SysFont(None, 36)
-    score_text = font.render(f"Игрок: {player_score}", True, (255, 255, 255))
-    time_text = font.render(f"Время: {int(remaining_time // 60)}:{int(remaining_time % 60):02d}", True, (255, 255, 255))
+    pacman_image = pacman_images[direction]
+    screen.blit(pacman_image, (int(pacman_pos[0] - CIRCLE_RADIUS), int(pacman_pos[1] - CIRCLE_RADIUS)))
 
-    screen.blit(score_text, (20, 20))
-    screen.blit(time_text, (size[0] - time_text.get_width() - 20, 20))
+    score_text = font.render(f"Score: {score}", True, (255, 255, 255))
+    screen.blit(score_text, (10, 10))
 
-    pygame.display.flip()
+    pg.display.flip()
     clock.tick(FPS)
 
-pygame.quit()
+pg.quit()
